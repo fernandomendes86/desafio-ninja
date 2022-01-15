@@ -1,5 +1,3 @@
-# schedule-api
-
 Execute tests with rspec:
 
 `$ rspec`
