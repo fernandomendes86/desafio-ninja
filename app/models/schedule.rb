@@ -2,7 +2,7 @@ class Schedule < ApplicationRecord
   belongs_to :room
 
   validates :subject, :start_at, :end_at, presence: true
-  validate :valid_time?, :monday_to_friday?, :some_day?, :some_room_day_time?, :end_less_start_time?
+  validate :valid_time?, :monday_to_friday?, :some_day?, :same_room_day_and_time?, :end_less_start_time?
 
   # I18n format
   def start_at
@@ -39,22 +39,21 @@ class Schedule < ApplicationRecord
     end
   end
 
-  def some_room_day_time?
-    if self.some_room_time
-      errors.add(:base, "Same room day and time")
+  def same_room_day_and_time?
+    if room_day_and_time
+      errors.add(:base, "There are times on the same day and room time")
     end
   end
 
-  def some_room_time
-    range = (self.start_at.to_time-1.minute..self.end_at.to_time-1.minute)
-    array = Schedule.where(room: self.room).select{|s| 
-      (range.include? s.start_at.to_time) || (range.include? s.end_at.to_time)
-    }
-    array.delete_if{ |x| x.id == self.id || x.end_at.to_time == self.start_at.to_time  }.present?
-  end
-
-
   private
+  
+    def room_day_and_time
+      range = (self.start_at.to_time-1.minute..self.end_at.to_time-1.minute)
+      array = self.room.schedules.select{|s| 
+        (range.include? s.start_at.to_time) || (range.include? s.end_at.to_time)
+      }
+      array.delete_if{ |x| x.id == self.id || x.end_at.to_time == self.start_at.to_time  }.present?
+    end
 
     def start_at_valid?
       (room.start_time..room.end_time).include?(self.start_at.to_time.to_s(:time))
@@ -65,3 +64,4 @@ class Schedule < ApplicationRecord
     end
 
 end
+
